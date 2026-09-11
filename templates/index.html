@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NutriBot – AI Nutrition Assistant</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ===== TOP NAVIGATION BAR ===== -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <i class="fa-solid fa-leaf nav-icon"></i>
+      <span class="brand-name">NutriBot</span>
+      <span class="brand-tag">AI Nutrition Assistant</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#chat"     class="nav-link active" data-section="chat"><i class="fa-solid fa-comments"></i> Chat</a></li>
+      <li><a href="#mealplan" class="nav-link"        data-section="mealplan"><i class="fa-solid fa-utensils"></i> Meal Plan</a></li>
+      <li><a href="#foodlog"  class="nav-link"        data-section="foodlog"><i class="fa-solid fa-clipboard-list"></i> Food Log</a></li>
+      <li><a href="#family"   class="nav-link"        data-section="family"><i class="fa-solid fa-users"></i> Family</a></li>
+    </ul>
+    <div class="nav-status">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Connecting…</span>
+    </div>
+  </nav>
+
+  <!-- ===== HERO BANNER ===== -->
+  <header class="hero">
+    <div class="hero-content">
+      <h1>Your Personal AI Nutrition Expert</h1>
+      <p>Powered by IBM watsonx.ai • Granite 3 8B Instruct • 4 Specialised Agents</p>
+      <div class="agent-badges">
+        <span class="badge"><i class="fa-solid fa-brain"></i> Knowledge</span>
+        <span class="badge"><i class="fa-solid fa-apple-whole"></i> Diet</span>
+        <span class="badge"><i class="fa-solid fa-heart-pulse"></i> Health</span>
+        <span class="badge"><i class="fa-solid fa-book-open"></i> Food Log</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MAIN CONTAINER ===== -->
+  <main class="main-container">
+
+    <!-- ===============================================================
+         SECTION 1 – CHAT INTERFACE
+    ================================================================ -->
+    <section id="chat" class="section active">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-comments"></i> Chat with NutriBot</h2>
+        <p>Ask any nutrition question or pick an agent below</p>
+      </div>
+
+      <!-- Agent selector -->
+      <div class="agent-selector">
+        <button class="agent-btn active" data-agent="nutrition_knowledge">
+          <i class="fa-solid fa-brain"></i>
+          <span>Knowledge Agent</span>
+        </button>
+        <button class="agent-btn" data-agent="diet_recommendation">
+          <i class="fa-solid fa-apple-whole"></i>
+          <span>Diet Agent</span>
+        </button>
+        <button class="agent-btn" data-agent="health_advisory">
+          <i class="fa-solid fa-heart-pulse"></i>
+          <span>Health Agent</span>
+        </button>
+        <button class="agent-btn" data-agent="food_log">
+          <i class="fa-solid fa-book-open"></i>
+          <span>Food Log Agent</span>
+        </button>
+      </div>
+
+      <!-- Chat window -->
+      <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+          <div class="message bot-message">
+            <div class="avatar bot-avatar"><i class="fa-solid fa-leaf"></i></div>
+            <div class="message-content">
+              <p>👋 Hello! I'm <strong>NutriBot</strong>, your AI-powered nutrition assistant built on IBM watsonx.ai.</p>
+              <p>I have 4 specialised agents to help you:</p>
+              <ul>
+                <li>🧠 <strong>Knowledge Agent</strong> – Nutrition facts &amp; RAG-based Q&amp;A</li>
+                <li>🥗 <strong>Diet Agent</strong> – Personalised meal plans</li>
+                <li>❤️ <strong>Health Agent</strong> – Condition-specific advice</li>
+                <li>📋 <strong>Food Log Agent</strong> – Track &amp; analyse your meals</li>
+              </ul>
+              <p>Select an agent above and ask away!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick prompts -->
+        <div class="quick-prompts" id="quickPrompts">
+          <span class="qp-label">Quick asks:</span>
+          <button class="qp-btn" data-msg="What are the benefits of omega-3 fatty acids?">Omega-3 benefits</button>
+          <button class="qp-btn" data-msg="How much protein do I need per day?">Daily protein</button>
+          <button class="qp-btn" data-msg="Best foods for weight loss">Weight loss foods</button>
+          <button class="qp-btn" data-msg="What vitamins are essential for immunity?">Immunity vitamins</button>
+        </div>
+
+        <!-- Input bar -->
+        <div class="chat-input-bar">
+          <textarea id="chatInput" placeholder="Ask NutriBot anything about nutrition…" rows="1"></textarea>
+          <button id="sendBtn" class="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===============================================================
+         SECTION 2 – MEAL PLAN VISUALISER
+    ================================================================ -->
+    <section id="mealplan" class="section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-utensils"></i> Meal Plan Visualiser</h2>
+        <p>Get your personalised 7-day meal plan</p>
+      </div>
+
+      <div class="meal-plan-grid">
+        <!-- Profile form -->
+        <div class="card form-card">
+          <h3><i class="fa-solid fa-user-pen"></i> Your Profile</h3>
+          <div class="form-group">
+            <label>Name</label>
+            <input type="text" id="mpName" placeholder="Your name" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Age</label>
+              <input type="number" id="mpAge" placeholder="Years" min="1" max="120" />
+            </div>
+            <div class="form-group">
+              <label>Weight (kg)</label>
+              <input type="number" id="mpWeight" placeholder="kg" min="1" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Height (cm)</label>
+              <input type="number" id="mpHeight" placeholder="cm" min="1" />
+            </div>
+            <div class="form-group">
+              <label>Activity Level</label>
+              <select id="mpActivity">
+                <option value="sedentary">Sedentary</option>
+                <option value="light">Light</option>
+                <option value="moderate" selected>Moderate</option>
+                <option value="active">Active</option>
+                <option value="very active">Very Active</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Goal</label>
+            <select id="mpGoal">
+              <option value="lose weight">Lose Weight</option>
+              <option value="maintain weight" selected>Maintain Weight</option>
+              <option value="gain muscle">Gain Muscle</option>
+              <option value="improve overall health">Improve Health</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Dietary Preference</label>
+            <select id="mpDiet">
+              <option value="no restrictions">No Restrictions</option>
+              <option value="vegetarian">Vegetarian</option>
+              <option value="vegan">Vegan</option>
+              <option value="keto">Keto</option>
+              <option value="Mediterranean">Mediterranean</option>
+              <option value="gluten-free">Gluten-Free</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Allergies / Restrictions</label>
+            <input type="text" id="mpAllergies" placeholder="e.g. nuts, dairy" />
+          </div>
+          <button class="btn-primary btn-full" id="generateMealPlan">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Meal Plan
+          </button>
+        </div>
+
+        <!-- Meal plan output -->
+        <div class="card output-card">
+          <h3><i class="fa-solid fa-calendar-week"></i> Your 7-Day Plan</h3>
+          <div id="mealPlanOutput" class="output-area">
+            <div class="empty-state">
+              <i class="fa-solid fa-utensils empty-icon"></i>
+              <p>Fill in your profile and click <strong>Generate Meal Plan</strong></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Macro visualiser -->
+      <div class="card macro-card">
+        <h3><i class="fa-solid fa-chart-pie"></i> Macronutrient Breakdown</h3>
+        <div class="macro-bars" id="macroBars">
+          <div class="macro-bar-item">
+            <span class="macro-label">Carbohydrates</span>
+            <div class="macro-bar"><div class="macro-fill carbs" style="width:50%">50%</div></div>
+          </div>
+          <div class="macro-bar-item">
+            <span class="macro-label">Protein</span>
+            <div class="macro-bar"><div class="macro-fill protein" style="width:25%">25%</div></div>
+          </div>
+          <div class="macro-bar-item">
+            <span class="macro-label">Fat</span>
+            <div class="macro-bar"><div class="macro-fill fat" style="width:25%">25%</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===============================================================
+         SECTION 3 – FOOD LOG
+    ================================================================ -->
+    <section id="foodlog" class="section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-clipboard-list"></i> Food Log</h2>
+        <p>Track your meals and get instant nutritional analysis</p>
+      </div>
+
+      <div class="food-log-grid">
+        <!-- Add entry -->
+        <div class="card">
+          <h3><i class="fa-solid fa-plus-circle"></i> Log a Meal</h3>
+          <div class="form-group">
+            <label>Food Item</label>
+            <input type="text" id="logFood" placeholder="e.g. Grilled chicken breast" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Quantity</label>
+              <input type="text" id="logQty" placeholder="e.g. 150g, 1 cup" />
+            </div>
+            <div class="form-group">
+              <label>Meal Type</label>
+              <select id="logMeal">
+                <option value="breakfast">Breakfast</option>
+                <option value="lunch">Lunch</option>
+                <option value="dinner">Dinner</option>
+                <option value="snack">Snack</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes (optional)</label>
+            <input type="text" id="logNotes" placeholder="Any notes…" />
+          </div>
+          <div class="btn-row">
+            <button class="btn-primary" id="addFoodLog"><i class="fa-solid fa-plus"></i> Add Entry</button>
+            <button class="btn-secondary" id="viewFoodLog"><i class="fa-solid fa-eye"></i> View &amp; Analyse</button>
+            <button class="btn-danger" id="clearFoodLog"><i class="fa-solid fa-trash"></i> Clear</button>
+          </div>
+        </div>
+
+        <!-- Log view -->
+        <div class="card">
+          <h3><i class="fa-solid fa-list"></i> Today's Log</h3>
+          <div id="foodLogDisplay" class="log-display">
+            <div class="empty-state">
+              <i class="fa-solid fa-utensils empty-icon"></i>
+              <p>No meals logged yet</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analysis output -->
+      <div class="card" id="logAnalysisCard" style="display:none;">
+        <h3><i class="fa-solid fa-chart-bar"></i> Nutritional Analysis</h3>
+        <div id="logAnalysisOutput" class="output-area"></div>
+      </div>
+    </section>
+
+    <!-- ===============================================================
+         SECTION 4 – FAMILY PROFILE MANAGER
+    ================================================================ -->
+    <section id="family" class="section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-users"></i> Family Profile Manager</h2>
+        <p>Manage nutrition profiles for every family member</p>
+      </div>
+
+      <div class="family-grid">
+        <!-- Add profile form -->
+        <div class="card">
+          <h3><i class="fa-solid fa-user-plus"></i> Add Family Member</h3>
+          <div class="form-group">
+            <label>Name *</label>
+            <input type="text" id="famName" placeholder="Member name" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Age</label>
+              <input type="number" id="famAge" placeholder="Years" />
+            </div>
+            <div class="form-group">
+              <label>Relationship</label>
+              <select id="famRelation">
+                <option value="self">Self</option>
+                <option value="spouse">Spouse / Partner</option>
+                <option value="child">Child</option>
+                <option value="parent">Parent</option>
+                <option value="sibling">Sibling</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Health Goals</label>
+            <input type="text" id="famGoals" placeholder="e.g. weight loss, muscle gain" />
+          </div>
+          <div class="form-group">
+            <label>Dietary Restrictions</label>
+            <input type="text" id="famRestrictions" placeholder="e.g. diabetic, lactose intolerant" />
+          </div>
+          <button class="btn-primary btn-full" id="addFamilyMember">
+            <i class="fa-solid fa-user-plus"></i> Add Member
+          </button>
+        </div>
+
+        <!-- Profiles list -->
+        <div class="card">
+          <h3><i class="fa-solid fa-id-card"></i> Family Members</h3>
+          <div id="familyProfilesList" class="profiles-list">
+            <div class="empty-state">
+              <i class="fa-solid fa-users empty-icon"></i>
+              <p>No family members added yet</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Family advice output -->
+      <div class="card" id="familyAdviceCard" style="display:none;">
+        <h3><i class="fa-solid fa-heart-pulse"></i> Personalised Advice</h3>
+        <div id="familyAdviceOutput" class="output-area"></div>
+      </div>
+    </section>
+
+  </main><!-- /main-container -->
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <p>
+      <strong>NutriBot</strong> · AICTE EduNet Project · Problem Statement No. 8: Nutrition Agent
+      &nbsp;|&nbsp; Powered by <strong>IBM watsonx.ai</strong> &amp; Granite 3 8B Instruct
+    </p>
+    <p class="footer-disclaimer">⚠️ For educational purposes only. Always consult a qualified healthcare professional for medical advice.</p>
+  </footer>
+
+  <!-- ===== LOADING OVERLAY ===== -->
+  <div id="loadingOverlay" class="loading-overlay" style="display:none;">
+    <div class="spinner-wrapper">
+      <div class="spinner"></div>
+      <p id="loadingText">NutriBot is thinking…</p>
+    </div>
+  </div>
+
+  <!-- ===== TOAST NOTIFICATION ===== -->
+  <div id="toast" class="toast"></div>
+
+  <!-- ===== JAVASCRIPT ===== -->
+  <script>
+  (() => {
+    "use strict";
+
+    // -------------------------------------------------------------------
+    // Utility helpers
+    // -------------------------------------------------------------------
+    const $ = id => document.getElementById(id);
+    const showLoading = (msg = "NutriBot is thinking…") => {
+      $("loadingText").textContent = msg;
+      $("loadingOverlay").style.display = "flex";
+    };
+    const hideLoading = () => { $("loadingOverlay").style.display = "none"; };
+
+    const showToast = (msg, type = "info") => {
+      const t = $("toast");
+      t.textContent = msg;
+      t.className = `toast toast-${type} show`;
+      setTimeout(() => t.className = "toast", 3000);
+    };
+
+    const formatText = raw =>
+      raw.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+         .replace(/\n/g, "<br />")
+         .replace(/•/g, "&bull;");
+
+    // -------------------------------------------------------------------
+    // Section navigation
+    // -------------------------------------------------------------------
+    document.querySelectorAll(".nav-link").forEach(link => {
+      link.addEventListener("click", e => {
+        e.preventDefault();
+        const sec = link.dataset.section;
+        document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+        document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+        link.classList.add("active");
+        const el = document.getElementById(sec);
+        if (el) { el.classList.add("active"); el.scrollIntoView({ behavior: "smooth" }); }
+      });
+    });
+
+    // -------------------------------------------------------------------
+    // API status check
+    // -------------------------------------------------------------------
+    const checkStatus = async () => {
+      try {
+        const res = await fetch("/api/status");
+        const data = await res.json();
+        $("statusDot").className = "status-dot online";
+        $("statusText").textContent = data.status === "online" ? "Online" : "Offline";
+      } catch {
+        $("statusDot").className = "status-dot offline";
+        $("statusText").textContent = "Offline";
+      }
+    };
+    checkStatus();
+
+    // -------------------------------------------------------------------
+    // SECTION 1 – Chat
+    // -------------------------------------------------------------------
+    let currentAgent = "nutrition_knowledge";
+
+    document.querySelectorAll(".agent-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".agent-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentAgent = btn.dataset.agent;
+        updateQuickPrompts(currentAgent);
+      });
+    });
+
+    const updateQuickPrompts = agent => {
+      const prompts = {
+        nutrition_knowledge: [
+          ["Omega-3 benefits", "What are the benefits of omega-3 fatty acids?"],
+          ["Daily protein",    "How much protein do I need per day?"],
+          ["Iron rich foods",  "What are the best iron-rich foods?"],
+          ["Immunity vitamins","What vitamins are essential for immunity?"],
+        ],
+        diet_recommendation: [
+          ["Lose 5 kg",        "I want to lose 5 kg in 2 months"],
+          ["Vegan bulk",       "Help me gain muscle on a vegan diet"],
+          ["Diabetic diet",    "Suggest a diet plan for a diabetic person"],
+          ["Heart health",     "Best diet for cardiovascular health"],
+        ],
+        health_advisory: [
+          ["PCOS nutrition",   "Nutritional advice for PCOS"],
+          ["Hypertension",     "Foods to avoid with high blood pressure"],
+          ["Thyroid diet",     "Diet tips for hypothyroidism"],
+          ["Gut health",       "How to improve gut health through diet?"],
+        ],
+        food_log: [
+          ["View my log",      "Show my food log"],
+          ["Add oats",         "I had 1 cup of oatmeal for breakfast"],
+          ["Analyse today",    "Analyse my meals for today"],
+          ["Clear log",        "Clear my food log"],
+        ],
+      };
+      const container = $("quickPrompts");
+      const list = prompts[agent] || [];
+      container.innerHTML = `<span class="qp-label">Quick asks:</span>` +
+        list.map(([label, msg]) =>
+          `<button class="qp-btn" data-msg="${msg}">${label}</button>`
+        ).join("");
+      container.querySelectorAll(".qp-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          $("chatInput").value = btn.dataset.msg;
+          sendChat();
+        });
+      });
+    };
+
+    // Initial quick prompt listeners
+    document.querySelectorAll(".qp-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        $("chatInput").value = btn.dataset.msg;
+        sendChat();
+      });
+    });
+
+    const appendMessage = (content, role = "bot", agent = "") => {
+      const wrap = document.createElement("div");
+      wrap.className = `message ${role}-message`;
+      const icon = role === "bot" ? "fa-leaf" : "fa-user";
+      const badge = agent ? `<span class="agent-label">${agent}</span>` : "";
+      wrap.innerHTML = `
+        <div class="avatar ${role}-avatar"><i class="fa-solid ${icon}"></i></div>
+        <div class="message-content">${badge}<p>${formatText(content)}</p></div>`;
+      $("chatMessages").appendChild(wrap);
+      $("chatMessages").scrollTop = $("chatMessages").scrollHeight;
+    };
+
+    const sendChat = async () => {
+      const input = $("chatInput");
+      const message = input.value.trim();
+      if (!message) return;
+
+      appendMessage(message, "user");
+      input.value = "";
+      input.style.height = "auto";
+
+      showLoading("NutriBot is analysing…");
+      try {
+        const body = { message, agent: currentAgent };
+        if (currentAgent === "food_log") {
+          const action = message.toLowerCase().includes("clear") ? "clear"
+                       : message.toLowerCase().includes("view") || message.toLowerCase().includes("analyse") || message.toLowerCase().includes("show") ? "view"
+                       : "view";
+          body.action = action;
+        }
+        const res  = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (data.success) {
+          const text = data.response || data.result?.analysis || JSON.stringify(data.result, null, 2);
+          const agentLabels = {
+            nutrition_knowledge: "🧠 Knowledge Agent",
+            diet_recommendation: "🥗 Diet Agent",
+            health_advisory:     "❤️ Health Agent",
+            food_log:            "📋 Food Log Agent",
+          };
+          appendMessage(text, "bot", agentLabels[currentAgent] || "");
+        } else {
+          appendMessage(`Error: ${data.error}`, "bot");
+        }
+      } catch (err) {
+        appendMessage(`Network error: ${err.message}`, "bot");
+      } finally {
+        hideLoading();
+      }
+    };
+
+    $("sendBtn").addEventListener("click", sendChat);
+    $("chatInput").addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); }
+    });
+    $("chatInput").addEventListener("input", function () {
+      this.style.height = "auto";
+      this.style.height = `${this.scrollHeight}px`;
+    });
+
+    // -------------------------------------------------------------------
+    // SECTION 2 – Meal Plan
+    // -------------------------------------------------------------------
+    $("generateMealPlan").addEventListener("click", async () => {
+      const userData = {
+        name:               $("mpName").value     || "User",
+        age:                $("mpAge").value       || "30",
+        weight:             $("mpWeight").value    || "70",
+        height:             $("mpHeight").value    || "170",
+        activity_level:     $("mpActivity").value,
+        goal:               $("mpGoal").value,
+        dietary_preference: $("mpDiet").value,
+        allergies:          $("mpAllergies").value || "none",
+      };
+      const out = $("mealPlanOutput");
+      showLoading("Generating your personalised 7-day meal plan…");
+      try {
+        const res  = await fetch("/api/meal-plan", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify(userData),
+        });
+        const data = await res.json();
+        if (data.success) {
+          out.innerHTML = `<div class="plan-text">${formatText(data.meal_plan)}</div>`;
+          showToast("Meal plan generated!", "success");
+          updateMacroBars(userData.goal);
+        } else {
+          out.innerHTML = `<p class="error-text">Error: ${data.error}</p>`;
+        }
+      } catch (err) {
+        out.innerHTML = `<p class="error-text">Network error: ${err.message}</p>`;
+      } finally {
+        hideLoading();
+      }
+    });
+
+    const updateMacroBars = goal => {
+      const presets = {
+        "lose weight":           [45, 30, 25],
+        "maintain weight":       [50, 25, 25],
+        "gain muscle":           [40, 35, 25],
+        "improve overall health":[50, 25, 25],
+      };
+      const [c, p, f] = presets[goal] || [50, 25, 25];
+      document.querySelector(".macro-fill.carbs").style.width   = `${c}%`;
+      document.querySelector(".macro-fill.carbs").textContent   = `${c}%`;
+      document.querySelector(".macro-fill.protein").style.width = `${p}%`;
+      document.querySelector(".macro-fill.protein").textContent = `${p}%`;
+      document.querySelector(".macro-fill.fat").style.width     = `${f}%`;
+      document.querySelector(".macro-fill.fat").textContent     = `${f}%`;
+    };
+
+    // -------------------------------------------------------------------
+    // SECTION 3 – Food Log
+    // -------------------------------------------------------------------
+    const renderLogs = logs => {
+      const display = $("foodLogDisplay");
+      if (!logs || !logs.length) {
+        display.innerHTML = `<div class="empty-state"><i class="fa-solid fa-utensils empty-icon"></i><p>No meals logged yet</p></div>`;
+        return;
+      }
+      display.innerHTML = logs.map(e => `
+        <div class="log-entry">
+          <div class="log-icon meal-${e.meal_type || 'snack'}"><i class="fa-solid fa-bowl-food"></i></div>
+          <div class="log-details">
+            <strong>${e.food}</strong>
+            <span>${e.quantity} · ${e.meal_type || ''}</span>
+            <small>${new Date(e.timestamp).toLocaleTimeString()}</small>
+          </div>
+        </div>`).join("");
+    };
+
+    $("addFoodLog").addEventListener("click", async () => {
+      const food = $("logFood").value.trim();
+      if (!food) { showToast("Please enter a food item", "warning"); return; }
+      showLoading("Logging and analysing…");
+      try {
+        const res  = await fetch("/api/food-log", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({
+            action: "add",
+            log_entry: {
+              food:      food,
+              quantity:  $("logQty").value   || "1 serving",
+              meal_type: $("logMeal").value,
+              notes:     $("logNotes").value,
+            },
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`${food} logged!`, "success");
+          $("logFood").value = $("logQty").value = $("logNotes").value = "";
+          const card = $("logAnalysisCard");
+          const out  = $("logAnalysisOutput");
+          card.style.display = "block";
+          out.innerHTML = `<div class="plan-text">${formatText(data.result.analysis || "")}</div>`;
+          // Also refresh log view
+          await loadLog();
+        }
+      } catch (err) {
+        showToast(`Error: ${err.message}`, "error");
+      } finally {
+        hideLoading();
+      }
+    });
+
+    const loadLog = async () => {
+      const res  = await fetch("/api/food-log", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ action: "view" }),
+      });
+      const data = await res.json();
+      if (data.success) renderLogs(data.result.logs || []);
+    };
+
+    $("viewFoodLog").addEventListener("click", async () => {
+      showLoading("Fetching and analysing your food log…");
+      try {
+        const res  = await fetch("/api/food-log", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ action: "view" }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          renderLogs(data.result.logs || []);
+          if (data.result.analysis) {
+            const card = $("logAnalysisCard");
+            card.style.display = "block";
+            $("logAnalysisOutput").innerHTML = `<div class="plan-text">${formatText(data.result.analysis)}</div>`;
+          }
+        }
+      } finally {
+        hideLoading();
+      }
+    });
+
+    $("clearFoodLog").addEventListener("click", async () => {
+      if (!confirm("Clear your entire food log?")) return;
+      await fetch("/api/food-log", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ action: "clear" }),
+      });
+      renderLogs([]);
+      $("logAnalysisCard").style.display = "none";
+      showToast("Food log cleared", "info");
+    });
+
+    // -------------------------------------------------------------------
+    // SECTION 4 – Family Profiles
+    // -------------------------------------------------------------------
+    const renderProfiles = profiles => {
+      const list = $("familyProfilesList");
+      if (!profiles.length) {
+        list.innerHTML = `<div class="empty-state"><i class="fa-solid fa-users empty-icon"></i><p>No family members added yet</p></div>`;
+        return;
+      }
+      list.innerHTML = profiles.map(p => `
+        <div class="profile-card">
+          <div class="profile-avatar"><i class="fa-solid fa-user-circle"></i></div>
+          <div class="profile-info">
+            <strong>${p.name}</strong>
+            <span>${p.relationship || ""} · Age ${p.age || "?"}</span>
+            <small>${p.health_goals || ""}</small>
+          </div>
+          <div class="profile-actions">
+            <button class="icon-btn" onclick="getAdvice('${p.name}','${p.health_goals}','${p.dietary_restrictions}')">
+              <i class="fa-solid fa-lightbulb"></i>
+            </button>
+            <button class="icon-btn danger" onclick="deleteProfile('${p.id}')">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>`).join("");
+    };
+
+    window.getAdvice = async (name, goals, restrictions) => {
+      showLoading(`Getting advice for ${name}…`);
+      try {
+        const res  = await fetch("/api/health-advice", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ condition: goals || "general health", symptoms: restrictions || "none" }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          const card = $("familyAdviceCard");
+          card.style.display = "block";
+          $("familyAdviceOutput").innerHTML = `
+            <h4>Personalised advice for <strong>${name}</strong></h4>
+            <div class="plan-text">${formatText(data.advice)}</div>`;
+          card.scrollIntoView({ behavior: "smooth" });
+        }
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.deleteProfile = async id => {
+      if (!confirm("Remove this profile?")) return;
+      await fetch(`/api/family-profile?id=${id}`, { method: "DELETE" });
+      loadProfiles();
+      showToast("Profile removed", "info");
+    };
+
+    const loadProfiles = async () => {
+      const res  = await fetch("/api/family-profile");
+      const data = await res.json();
+      if (data.success) renderProfiles(data.profiles);
+    };
+
+    $("addFamilyMember").addEventListener("click", async () => {
+      const name = $("famName").value.trim();
+      if (!name) { showToast("Please enter a name", "warning"); return; }
+      showLoading("Adding family member…");
+      try {
+        const res  = await fetch("/api/family-profile", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({
+            name:                 name,
+            age:                  $("famAge").value,
+            relationship:         $("famRelation").value,
+            health_goals:         $("famGoals").value,
+            dietary_restrictions: $("famRestrictions").value,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`${name} added!`, "success");
+          $("famName").value = $("famAge").value = $("famGoals").value = $("famRestrictions").value = "";
+          loadProfiles();
+        }
+      } finally {
+        hideLoading();
+      }
+    });
+
+    loadProfiles();
+
+  })(); // end IIFE
+  </script>
+</body>
+</html>
