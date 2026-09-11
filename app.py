@@ -37,7 +37,7 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "nutribot-secret-2024")
 IBM_API_KEY   = os.getenv("IBM_CLOUD_API_KEY", "")
 PROJECT_ID    = os.getenv("WATSONX_PROJECT_ID", "")
 WATSONX_URL   = os.getenv("WATSONX_URL", "https://us-south.ml.cloud.ibm.com")
-MODEL_ID      = "ibm/granite-3-8b-instruct"
+MODEL_ID      = "meta-llama/llama-3-1-8b"
 
 _wx_model: ModelInference | None = None
 
@@ -62,11 +62,32 @@ def get_watsonx_model() -> ModelInference:
 
 
 def generate_response(prompt: str) -> str:
-    """Send a prompt to Granite and return the generated text."""
+    """Send a prompt to Granite, print token metrics, and return generated text."""
     try:
         model = get_watsonx_model()
-        response = model.generate_text(prompt=prompt)
-        return response.strip() if response else "I'm unable to generate a response right now."
+        
+        # Call generate() instead of generate_text() to get full payload metadata
+        response = model.generate(prompt=prompt)
+        
+        # Extract response text and token counts safely
+        results = response.get("results", [{}])[0]
+        generated_text = results.get("generated_text", "").strip()
+        
+        input_tokens = results.get("input_token_count", 0)
+        output_tokens = results.get("generated_token_count", 0)
+        total_tokens = input_tokens + output_tokens
+
+        # Print token metrics directly in your terminal console
+        print("\n==================================================")
+        print("           WATSONX TOKEN USAGE METRICS            ")
+        print("==================================================")
+        print(f" Prompt Input Tokens : {input_tokens}")
+        print(f" Model Output Tokens : {output_tokens}")
+        print(f" Total Tokens Used   : {total_tokens}")
+        print("==================================================\n")
+
+        return generated_text if generated_text else "I'm unable to generate a response right now."
+        
     except Exception as exc:
         logger.error("watsonx generation error: %s", exc)
         return f"I encountered an error while processing your request. Please check your API credentials. ({exc})"
