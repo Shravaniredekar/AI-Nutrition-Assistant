@@ -293,8 +293,15 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app
 ---
 
 ## 🖥️ Screenshots
+![Chat interface](screenshots/chat.png)
 
-> Run the application and visit `http://localhost:5000` to view the full UI.
+![Meal plan](screenshots/meal-plan.png)
+
+![Meal log](screenshots/meal-log.png)
+
+![Track meal](screenshots/Track-meal.png)
+
+![Family meal planning](screenshots/family-meal.png)
 
 ---
 
